@@ -1,0 +1,201 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+
+void print(FILE *p,FILE *q,char token[15],char buffer[15]);
+
+int main()
+{char ch,token[25];
+ char a[15];
+int flag=1,count=0,i=0;
+FILE *p,*q; 
+  
+    
+    p = fopen("input.txt", "r"); 
+    q = fopen("input.txt", "r");
+   
+    
+
+while((ch=fgetc(q))!=EOF)//not end of file
+{   if(strcmp(token,"string")==0 && ch!='"')
+	    {continue;}//fseek(q,1,SEEK_CUR);
+	else if(ch=='\\')
+	{
+	    fseek(q,1,SEEK_CUR);
+	    continue;
+	    
+	}
+	else if(strcmp(token,"character")==0 && ch!='\'')
+	    {continue;}
+    //printf("%c\n",ch);
+	switch(ch)
+	{
+	    case '"':if(flag==0) //to avoid confusion with other flag =2 of a number..not necessary..put flag==2 condition after this
+	 	            {a[i]='\0';print(p,q,token,a);flag=1;i=0;}
+	  	
+	 	        else if(flag==1)
+	 	            {flag=0;strcpy(token,"string");}//fseek(q,1,SEEK_CUR);
+		        else if(flag==2)
+	 	            {printf("error..before string literal there should be separator");exit(0);}
+	 
+	        	break;
+	case '\'':if(flag==0) //to avoid confusion with other flag =2 of a number..not necessary..put flag==2 condition after this
+	 	            {a[i]='\0';print(p,q,token,a);flag=1;i=0;}
+	  	
+	 	        else if(flag==1)
+	 	            {flag=0;strcpy(token,"character");}//fseek(q,1,SEEK_CUR);
+		        else if(flag==2)
+	 	            {fseek(q,-1,SEEK_CUR);a[i]='\0';print(p,q,token,a);flag=1;i=0;
+	 	                //printf("error..before string literal there should be separator");exit(0);
+	 	            }
+	
+	            break;
+	case '\t':
+	case '\n':
+	case '\r':
+	case ' ':
+	 
+	 	
+	 		    if(flag==2)
+	 		        {fseek(q,-1,SEEK_CUR);a[i]='\0';print(p,q,token,a);flag=1;i=0;}
+	 		    else if(flag==1)
+	 		        {fseek(p,1,SEEK_CUR);}//fseek(q,1,SEEK_CUR);
+	 	
+	        	break;
+	case '#':
+	         while((ch=fgetc(q))!='>');
+	         i=ftell(q)-ftell(p);
+	         fseek(p,i,SEEK_CUR);
+	         i=0;
+	         break;
+	         
+	
+	         
+//	case '/':  if(fgetc(q)=='/') //check for division
+//	            while((ch=fgetc(q))!='\n');
+//	            i=ftell(q)-ftell(p);
+//	            fseek(p,i,SEEK_CUR);
+//	            i=0;
+//	            break;
+	case '[':
+	case ']':
+	case ';':
+	case ',':
+	case '(':
+	case ')':
+	case ':':
+	case '{':
+	case '}':if(flag==1)
+	                {strcpy(token,"separator");a[i]='\0';print(p,q,token,a);i=0;}
+	            else
+	                {fseek(q,-1,SEEK_CUR);a[i]='\0';print(p,q,token,a);i=0;flag=1;}
+	            break;
+	case '=':
+	case '>':
+	case '<':
+	case '+':
+	case '-':
+	case '*':
+	case '!':
+	case '|':
+	case '&':
+	case '/':  if(ch=='/')
+	            {    if(fgetc(q)=='/') //check for division
+	                {  while((ch=fgetc(q))!='\n');
+	                    i=ftell(q)-ftell(p);
+	                    fseek(p,i,SEEK_CUR);
+	                    i=0;
+	                    break;
+	                }
+	                else
+	                    fseek(q,-1,SEEK_CUR);
+	            }
+	           if(flag==1)
+	                {strcpy(token,"operator");flag=2;a[i++]=ch;}//a[i++]=ch;have to look +-,=+ etc
+	         
+	            else if(strcmp(token,"operator")==0)
+	                {a[i]='\0';print(p,q,token,a);i=0;flag=1;}
+	            else
+	                 {fseek(q,-1,SEEK_CUR);a[i]='\0';print(p,q,token,a);i=0;flag=1;}
+	            break;
+	//logical operator,!,&&
+	default:    if(flag==1)
+		        {  if(((ch>=65)&&(ch<=90))||((ch>=97)&&(ch<=122))||(ch=='_'))
+		            {	if(ch=='_')
+				            strcpy(token,"identifier");
+	  	                else
+				            {strcpy(token,"keyword");a[i++]=ch;}
+			            flag=2;
+		            }
+		            else if((ch>=48)&&(ch<=57))
+		                {flag=2;strcpy(token,"number");}
+	        	}
+		        else if(flag==2)
+	 	        {       if((ch>=48)&&(ch<=57))
+			            {	if(strcmp(token,"number")==0)//floating numbers..include dot also
+		 			            break;
+				            else if((strcmp(token,"keyword")==0)||(strcmp(token,"identifier")==0))
+					            strcpy(token,"identifier");		 	 	
+				            else
+				                {   fseek(q,-1,SEEK_CUR);a[i]='\0';print(p,q,token,a);i=0;flag=1;
+				                    //printf("error..illegal character..not a number");exit(0);
+				                }
+			            }
+			            else if(((ch>=65)&&(ch<=90))||((ch>=97)&&(ch<=122))||(ch=='_'))
+			            {	if(strcmp(token,"number")==0)//floating numbers..include dot also
+		 			            {printf("error..identifier do not start with digit");exit(0);}
+				            else if((strcmp(token,"keyword")==0)||(strcmp(token,"identifier")==0))
+				            	{a[i++]=ch;}		 	 	
+				            else
+				                {   fseek(q,-1,SEEK_CUR);a[i]='\0';print(p,q,token,a);i=0;flag=1;
+				                    //printf("error..illegal character..not a identifier");exit(0);
+				                    
+				                }
+			            }
+			            else
+				            {printf("unknown character");exit(0);}
+		        }		
+	}
+
+}
+
+if(flag!=1)
+{a[i]='\0';print(p,q,token,a);}
+fclose (p);
+fclose (q);
+return 0;
+}
+
+
+
+void print(FILE *p,FILE *q,char token[25],char buffer[15])
+{ FILE *out;
+ int flag=2;
+ char ch;
+ char keywords[41][15] = {"auto","break","case","char","const","continue","default",
+							"do","double","else","enum","extern","fgetc","ftell","fputc","FILE","float","for","fprintf","fseek","goto",
+							"if","int","long","register","return","short","signed",
+							"sizeof","static","strcmp","strcpy","struct","switch","typedef","union",
+							"unsigned","void","volatile","while","SEEK_CUR"};
+out = fopen("output.txt", "a");
+
+if(strcmp(token,"keyword")==0)
+{
+    for(int i = 0; i < 41; ++i){
+		if(strcmp(keywords[i], buffer) == 0){
+			flag = 1;
+			break;
+		}
+	}
+	if(flag!=1)
+	 strcpy(token,"identifier");
+}
+fprintf(out,"<%s, ",token);
+while(ftell(p)!=ftell(q))
+{ch=fgetc(p);
+ fputc(ch,out);
+}
+fprintf(out,">\n");
+strcpy(token,"a");
+fclose(out);
+}
